@@ -1,40 +1,51 @@
+import struct
 from functions import memfuncs
-import time
-
-# (itemDefinitionIndex or paintKit)
-SKIN_MAP = {
-    7:  433,   # AK-47 → Case Hardened
-    9:  344,   # AWP → Dragon Lore
-    16: 309,   # M4A4 → Howl
-    60: 309,   # M4A1-S → Howl
-    4:  38,    # Glock → Fade
-    61: 653,   # USP-S → Kill Confirmed
-}
-
-def get_weapon_paint(item_def_index: int) -> int:
-    return SKIN_MAP.get(item_def_index, 0)
 
 def SkinChanger_Update(processHandle, clientBaseAddress, Offsets, Options):
     if not Options.get("EnableSkinChanger", False):
         return
 
     try:
+        # ۱. خواندن EntityList و آماده‌سازی ListEntries (مثل ESP)
+        EntityList = memfuncs.ProcMemHandler.ReadPointer(
+            processHandle, clientBaseAddress + Offsets.offset.dwEntityList
+        )
+        if not EntityList:
+            return
+
+        # این خط خیلی مهمه - دقیقاً مثل ESP
+        ListEntries = struct.unpack("64Q", memfuncs.ProcMemHandler.ReadBytes(
+            processHandle, EntityList + 0x10, 64 * 8
+        ))
+
+        # ۲. گرفتن Local Player Pawn
         local_pawn = memfuncs.ProcMemHandler.ReadPointer(
             processHandle, clientBaseAddress + Offsets.offset.dwLocalPlayerPawn
         )
         if not local_pawn:
             return
 
-        health = memfuncs.ProcMemHandler.ReadInt(processHandle, local_pawn + Offsets.offset.m_iHealth)
-        if health <= 0:
+        # ۳. خواندن WeaponServices
+        weapon_services = memfuncs.ProcMemHandler.ReadPointer(
+            processHandle, local_pawn + Offsets.offset.m_pWeaponServices
+        )
+        if not weapon_services:
             return
 
-        # Only Active Weapon
-        active_weapon = memfuncs.ProcMemHandler.ReadPointer(
-            processHandle, local_pawn + Offsets.offset.m_pClippingWeapon
+        # ۴. خواندن handle سلاح فعال
+        active_weapon_handle = memfuncs.ProcMemHandler.ReadUInt(
+            processHandle, weapon_services + Offsets.offset.m_hActiveWeapon
         )
+        if not active_weapon_handle:
+            return
+
+        # ۵. تبدیل handle به pointer واقعی سلاح (مهم‌ترین بخش)
+        active_weapon = GetEntityFromHandle(processHandle, ListEntries, active_weapon_handle)
         if not active_weapon:
             return
+
+        # حالا active_weapon آدرس واقعی entity سلاح هست
+        # از اینجا به بعد می‌تونی paintkit و ... رو روش بنویسی
 
         item_def = memfuncs.ProcMemHandler.ReadShort(
             processHandle,
@@ -42,22 +53,24 @@ def SkinChanger_Update(processHandle, clientBaseAddress, Offsets, Options):
             Offsets.offset.m_Item + Offsets.offset.m_iItemDefinitionIndex
         )
 
-        paint = get_weapon_paint(item_def)
+        paint = get_weapon_paint(item_def)   # تابع خودت
         if paint == 0:
             return
 
+        # اعمال اسکین
         current_paint = memfuncs.ProcMemHandler.ReadInt(
             processHandle, active_weapon + Offsets.offset.m_nFallbackPaintKit
         )
 
         if current_paint != paint:
-            # force update
+            # ItemIDHigh رو -1 کن
             memfuncs.ProcMemHandler.WriteUInt(
                 processHandle,
                 active_weapon + Offsets.offset.m_AttributeManager +
                 Offsets.offset.m_Item + Offsets.offset.m_iItemIDHigh,
-                0xFFFFFFFF  # or -1
+                0xFFFFFFFF
             )
+
             memfuncs.ProcMemHandler.WriteInt(
                 processHandle, active_weapon + Offsets.offset.m_nFallbackPaintKit, paint
             )
@@ -65,18 +78,8 @@ def SkinChanger_Update(processHandle, clientBaseAddress, Offsets, Options):
                 processHandle, active_weapon + Offsets.offset.m_flFallbackWear, 0.001
             )
 
-            # Force full update (maby lag)
-            engine = memfuncs.GetModuleBase("engine2.dll", processHandle)
-            if engine:
-                net_client = memfuncs.ProcMemHandler.ReadPointer(
-                    processHandle, engine + Offsets.offset.dwNetworkGameClient
-                )
-                if net_client:
-                    memfuncs.ProcMemHandler.WriteInt(
-                        processHandle,
-                        net_client + Offsets.offset.dwNetworkGameClient_deltaTick,
-                        -1
-                    )
+            # Force update (اختیاری - ممکنه لگ بده)
+            # ...
 
     except Exception:
         pass
