@@ -10,6 +10,7 @@ from features import bombtimer
 from features import fovchanger
 from features import bhop
 from features import discodrpc
+from features import skinchanger
 
 from GUI import gui_mainloop
 from GUI import gui_util
@@ -141,6 +142,7 @@ if __name__ == "__main__":
 	while esp.pme.overlay_loop():
 		Options = SharedOptions.copy()
 		esp.ESP_Update(ProcessObject, ClientModuleAddress, Options, SharedOffsets, SharedBombState)
+		skinchanger.SkinChanger_Update(ProcessObject, ClientModuleAddress, SharedOffsets, Options)
 
 		if Options["EnableAimbot"] and win32api.GetAsyncKeyState(Options["AimbotKey"]) & 0x8000:
 			aimbot.Aimbot_Update(ProcessObject, ClientModuleAddress, SharedOffsets, Options, ARDUINO_HANDLE=ARDUINO_HANDLE)

@@ -57,6 +57,8 @@ CHEAT_SETTINGS = {
     "EnableESPFlagsText": False,
     "EnableFOVCircle": True,
 
+    "EnableSkinChanger": False,
+
     "ESPBoxStyle": "Full",
     "ESPBoxThickness": 1.0,
     "ESPSkeletonThickness": 1.0,
