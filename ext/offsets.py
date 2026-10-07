@@ -16,7 +16,6 @@ class Offset:
 	dwGlobalVars: int
 	dwPlantedC4: int
 
-
 	ButtonJump: int
 	
 	m_hPlayerPawn: int
@@ -69,9 +68,7 @@ class Offset:
 	m_flC4Blow: int
 	m_bBombDefused: int
 
-	# Skin changer
-	
-	m_pClippingWeapon: int
+	# ========== Skin Changer ==========
 	m_nFallbackPaintKit: int
 	m_flFallbackWear: int
 	m_nFallbackSeed: int
@@ -82,6 +79,7 @@ class Offset:
 	# Force Update
 	dwNetworkGameClient: int
 	dwNetworkGameClient_deltaTick: int
+
 
 class Client:
 	def __init__(self, manual_dump=False):
@@ -152,7 +150,6 @@ def get_offsets() -> Offset:
 		dwSensitivity = oc.offset("dwSensitivity"),
 		dwGlobalVars = oc.offset("dwGlobalVars"),
 		dwPlantedC4 = oc.offset("dwPlantedC4"),
-		
 
 		ButtonJump=oc.button("jump"),
 		
@@ -204,7 +201,7 @@ def get_offsets() -> Offset:
 		m_flC4Blow = oc.get("C_PlantedC4", "m_flC4Blow"),
 		m_bBombDefused = oc.get("C_PlantedC4", "m_bBombDefused"),
 
-		m_pClippingWeapon = oc.get("C_CSPlayerPawnBase", "m_pClippingWeapon"),
+		# ========== Skin Changer (بدون m_pClippingWeapon) ==========
 		m_nFallbackPaintKit = oc.get("C_EconEntity", "m_nFallbackPaintKit"),
 		m_flFallbackWear = oc.get("C_EconEntity", "m_flFallbackWear"),
 		m_nFallbackSeed = oc.get("C_EconEntity", "m_nFallbackSeed"),
@@ -212,10 +209,8 @@ def get_offsets() -> Offset:
 		m_iItemIDHigh = oc.get("C_EconItemView", "m_iItemIDHigh"),
 		m_hMyWeapons = oc.get("CPlayer_WeaponServices", "m_hMyWeapons"),
 
-		# offsets.json (engine2.dll)
+		# Force Update
 		dwNetworkGameClient = oc.offsets["engine2.dll"]["dwNetworkGameClient"],
 		dwNetworkGameClient_deltaTick = oc.offsets["engine2.dll"]["dwNetworkGameClient_deltaTick"],
-		
 	)
 	return offsets_obj
-
